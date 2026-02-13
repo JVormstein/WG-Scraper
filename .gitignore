@@ -60,3 +60,4 @@ MANIFEST
 *.db-wal
 wg_data.db
 example_data.db
+.env
