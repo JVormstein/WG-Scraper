@@ -163,19 +163,20 @@ class Database:
         self,
         limit: int = 100,
         offset: int = 0,
-        city: Optional[str] = None,
-        min_size: Optional[float] = None,
-        max_rent: Optional[float] = None
+        filters: Optional[Dict[str, Any]] = None,
+        sort_by: Optional[str] = None,
+        sort_order: str = "DESC"
     ) -> List[Dict[str, Any]]:
         """
-        Ruft mehrere Anzeigen mit optionalen Filtern ab.
+        Ruft mehrere Anzeigen mit flexiblen Filtern ab.
         
         Args:
             limit: Maximale Anzahl der Ergebnisse
             offset: Offset für Pagination
-            city: Filter nach Stadt
-            min_size: Minimale Größe in m²
-            max_rent: Maximale Miete in Euro
+            filters: Dictionary mit Filter-Bedingungen, z.B.:
+                     {'size>': 20, 'rent<': 500, 'city': 'Berlin'}
+            sort_by: Spalte zum Sortieren (z.B. 'rent', 'size', 'scraped_at')
+            sort_order: 'ASC' oder 'DESC'
             
         Returns:
             Liste von Dictionaries mit Anzeigendaten
@@ -186,19 +187,52 @@ class Database:
         query = "SELECT * FROM listings WHERE 1=1"
         params = []
         
-        if city:
-            query += " AND city = ?"
-            params.append(city)
+        # Filter anwenden
+        if filters:
+            for key, value in filters.items():
+                if value is None:
+                    continue
+                
+                # Operatoren unterstützen
+                if key.endswith('>'):
+                    field = key[:-1]
+                    query += f" AND {field} > ?"
+                    params.append(value)
+                elif key.endswith('<'):
+                    field = key[:-1]
+                    query += f" AND {field} < ?"
+                    params.append(value)
+                elif key.endswith('>='): 
+                    field = key[:-2]
+                    query += f" AND {field} >= ?"
+                    params.append(value)
+                elif key.endswith('<='): 
+                    field = key[:-2]
+                    query += f" AND {field} <= ?"
+                    params.append(value)
+                elif key.endswith('!='):
+                    field = key[:-2]
+                    query += f" AND {field} != ?"
+                    params.append(value)
+                else:
+                    # Exakte Übereinstimmung
+                    query += f" AND {key} = ?"
+                    params.append(value)
         
-        if min_size:
-            query += " AND size >= ?"
-            params.append(min_size)
+        # Sortierung
+        if sort_by:
+            # Validierung gegen SQL-Injection
+            valid_columns = ['id', 'listing_id', 'title', 'city', 'district', 
+                           'size', 'rent', 'available_from', 'scraped_at', 'created_at']
+            if sort_by in valid_columns:
+                order = 'ASC' if sort_order.upper() == 'ASC' else 'DESC'
+                query += f" ORDER BY {sort_by} {order}"
+            else:
+                query += " ORDER BY scraped_at DESC"
+        else:
+            query += " ORDER BY scraped_at DESC"
         
-        if max_rent:
-            query += " AND rent <= ?"
-            params.append(max_rent)
-        
-        query += " ORDER BY scraped_at DESC LIMIT ? OFFSET ?"
+        query += " LIMIT ? OFFSET ?"
         params.extend([limit, offset])
         
         cursor.execute(query, params)
