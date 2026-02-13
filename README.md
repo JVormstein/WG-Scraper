@@ -1,6 +1,6 @@
 # WG-Gesucht Scraper
 
-Ein Python-CLI-Tool zum Scrapen von WG-Anzeigen von wg-gesucht.de und Speichern in einer lokalen SQLite-Datenbank.
+Genervt von wg-gesucht.de's suchinterface? Willst du eine tifere Analyse, oder einfach alle WGs mit offenen Stellen in einer Region? wg-scraper ist ein Python-CLI-Tool zum Scrapen von WG-Anzeigen von wg-gesucht.de und Lokaler Analyse der selbigen.
 
 ## Features
 
@@ -44,6 +44,8 @@ Ein Python-CLI-Tool zum Scrapen von WG-Anzeigen von wg-gesucht.de und Speichern 
 ### Grundlegende Befehle
 
 #### 1. WG-Anzeigen scrapen
+
+Gehe einfach wg-gesucht.de, gebe deine Filter ein und kopiere die gesamte URL. Der Scraper erledigt den Rest.
 
 ```bash
 wg-scraper scrape "https://www.wg-gesucht.de/wg-zimmer-in-Berlin.8.0.1.0.html"
@@ -125,42 +127,6 @@ WG Scraper/
 └── README.md               # Diese Datei
 ```
 
-## Implementierungs-Hinweise
-
-⚠️ **WICHTIG**: Das Scraper-Modul enthält derzeit nur eine Grundstruktur mit Platzhaltern!
-
-Die tatsächliche Scraping-Implementierung in `src/wg_scraper/scraper.py` muss noch angepasst werden:
-
-### Zu implementieren:
-
-1. **HTML-Selektoren anpassen** in `_parse_listing_preview()`:
-   - Titel-Selektor
-   - Preis-Extraktion
-   - Größen-Extraktion
-   - Stadt/Bezirk-Extraktion
-   - Weitere Details
-
-2. **Pagination implementieren** in `_get_next_page_url()`:
-   - Nächste-Seite-Button finden
-   - URL korrekt extrahieren
-
-3. **Listing-ID-Extraktion** in `_extract_listing_id()`:
-   - An URL-Format von wg-gesucht.de anpassen
-
-4. **Optional: Detail-Seiten** in `scrape_listing_details()`:
-   - Vollständige Beschreibungen
-   - Bilder
-   - Kontaktinformationen
-   - Ausstattungsmerkmale
-
-### Entwicklungs-Workflow:
-
-1. Website-Struktur analysieren (Browser DevTools)
-2. HTML-Selektoren identifizieren
-3. In `scraper.py` implementieren
-4. Mit kleiner Seitenzahl testen: `--max-pages 1`
-5. Logs prüfen: `-vv` für Debug-Output
-
 ## Datenbank-Schema
 
 Die SQLite-Datenbank verwendet folgendes Schema:
@@ -222,16 +188,6 @@ black src/ tests/
 - **beautifulsoup4**: HTML-Parsing
 - **lxml**: XML/HTML-Parser (schneller als html.parser)
 
-## Rechtliche Hinweise
-
-⚠️ **Web Scraping Legal Notice:**
-
-- Respektiere die robots.txt der Website
-- Verwende angemessene Delays zwischen Requests
-- Überlaste den Server nicht
-- Beachte die Nutzungsbedingungen von wg-gesucht.de
-- Verwende gescrapte Daten nur für private, nicht-kommerzielle Zwecke
-
 ## Lizenz
 
 MIT License - siehe [LICENSE.txt](LICENSE.txt)
@@ -239,15 +195,6 @@ MIT License - siehe [LICENSE.txt](LICENSE.txt)
 ## Autor
 
 Jonas - jvormstein@outlook.de
-
-## Nächste Schritte
-
-1. [ ] Scraping-Logik implementieren (siehe Implementierungs-Hinweise oben)
-2. [ ] Tests für Scraper schreiben
-3. [ ] Export-Funktion (CSV, JSON)
-4. [ ] Filter-Optionen erweitern
-5. [ ] Web-Interface (optional)
-6. [ ] Docker-Support (optional)
 
 ## Beitragen
 
