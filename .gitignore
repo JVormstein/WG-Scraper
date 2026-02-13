@@ -52,3 +52,11 @@ MANIFEST
 .venv*/
 .conda*/
 .python-version
+
+# WG-Scraper specific
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+wg_data.db
+example_data.db
