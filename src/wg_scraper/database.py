@@ -69,6 +69,10 @@ class Database:
                 description TEXT,
                 flatmates INTEGER,
                 flatmate_details TEXT,
+                flatmates_female INTEGER,
+                flatmates_male INTEGER,
+                flatmates_diverse INTEGER,
+                rooms_free INTEGER,
                 features TEXT,
                 images TEXT,
                 contact_name TEXT,
@@ -116,12 +120,14 @@ class Database:
                 INSERT INTO listings (
                     listing_id, url, title, city, district, size, rent,
                     available_from, available_until, room_type, online_since,
-                    description, flatmates, flatmate_details, features,
+                    description, flatmates, flatmate_details, flatmates_female,
+                    flatmates_male, flatmates_diverse, rooms_free, features,
                     images, contact_name, scraped_at
                 ) VALUES (
                     :listing_id, :url, :title, :city, :district, :size, :rent,
                     :available_from, :available_until, :room_type, :online_since,
-                    :description, :flatmates, :flatmate_details, :features,
+                    :description, :flatmates, :flatmate_details, :flatmates_female,
+                    :flatmates_male, :flatmates_diverse, :rooms_free, :features,
                     :images, :contact_name, :scraped_at
                 )
             """, data)
@@ -222,8 +228,12 @@ class Database:
         # Sortierung
         if sort_by:
             # Validierung gegen SQL-Injection
-            valid_columns = ['id', 'listing_id', 'title', 'city', 'district', 
-                           'size', 'rent', 'available_from', 'scraped_at', 'created_at']
+            valid_columns = [
+                'id', 'listing_id', 'title', 'city', 'district',
+                'size', 'rent', 'available_from', 'available_until',
+                'flatmates', 'flatmates_female', 'flatmates_male',
+                'flatmates_diverse', 'rooms_free', 'scraped_at', 'created_at'
+            ]
             if sort_by in valid_columns:
                 order = 'ASC' if sort_order.upper() == 'ASC' else 'DESC'
                 query += f" ORDER BY {sort_by} {order}"

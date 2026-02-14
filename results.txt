@@ -1,0 +1,231 @@
+================================================================================
+WG-Gesucht Scraper - Routen-Analyse
+Ziel: Johann-Maus-Straße 2, 71254 Ditzingen
+Verkehrsmittel: transit
+Anzahl Ergebnisse: 20
+================================================================================
+
+1. Möbliertes WG-Zimmer 15m2 in 3er-WG in Stuttgart Bad Cannstatt in Stadtbahnnähe ab 01.04.2026 frei
+   Stuttgart
+                            
+                            Bad Cannstatt
+   Miete: 550.0 € | Größe: 15.0 m²
+   Luftlinie: 10.96 km | Transit: 14.0 km (~21.5 min)
+   Verfügbar ab: 01.04.2026
+   WG-Größe: 3er WG (2w,0m,0d,0n)
+   URL: https://www.wg-gesucht.de/wg-zimmer-in-Stuttgart-Bad-Cannstatt.12283487.html
+--------------------------------------------------------------------------------
+
+2. möbliertes WG-Zimmer in renovierter Altbauwohnung in Bad Cannstatt
+   Stuttgart
+                            
+                            Bad Cannstatt
+   Miete: 445.0 € | Größe: 14.0 m²
+   Luftlinie: 10.96 km | Transit: 14.0 km (~21.5 min)
+   Verfügbar ab: 01.02.2026
+   WG-Größe: 5er WG (2w,2m,0d,0n)
+   URL: https://www.wg-gesucht.de/wg-zimmer-in-Stuttgart-Bad-Cannstatt.12299003.html
+--------------------------------------------------------------------------------
+
+3. Geräumige WG im Zentrum von Bad Cannstatt
+   Stuttgart
+                            
+                            Bad Cannstatt
+   Miete: 520.0 € | Größe: 18.0 m²
+   Luftlinie: 10.96 km | Transit: 14.0 km (~21.5 min)
+   Verfügbar ab: 01.03.2026
+   WG-Größe: 4er WG (2w,1m,0d,0n)
+   URL: https://www.wg-gesucht.de/wg-zimmer-in-Stuttgart-Bad-Cannstatt.12318938.html
+--------------------------------------------------------------------------------
+
+4. 20qm 600€ warm 3er -WG im Bad Cannstatt
+   Stuttgart
+                            
+                            Bad Cannstatt
+   Miete: 600.0 € | Größe: 20.0 m²
+   Luftlinie: 10.96 km | Transit: 14.0 km (~21.5 min)
+   Verfügbar ab: 16.02.2026
+   WG-Größe: 3er WG (0w,2m,0d,0n)
+   URL: https://www.wg-gesucht.de/wg-zimmer-in-Stuttgart-Bad-Cannstatt.12422890.html
+--------------------------------------------------------------------------------
+
+5. Ruhiges Zimmer in 3er WG :), Gute Anbindung
+   Stuttgart
+                            
+                            Bad Cannstatt
+   Miete: 457.0 € | Größe: 12.0 m²
+   Luftlinie: 10.96 km | Transit: 14.0 km (~21.5 min)
+   Verfügbar ab: 07.02.2026
+   WG-Größe: 3er WG (0w,1m,0d,0n)
+   URL: https://www.wg-gesucht.de/wg-zimmer-in-Stuttgart-Bad-Cannstatt.12537471.html
+--------------------------------------------------------------------------------
+
+6. Super nette WG ist auf der Suche nach einer/einem neuen Mitbewohner/in!!!
+   Stuttgart
+                            
+                            Bad Cannstatt
+   Miete: 490.0 € | Größe: 15.0 m²
+   Luftlinie: 10.96 km | Transit: 14.0 km (~21.5 min)
+   Verfügbar ab: 15.03.2026
+   WG-Größe: 4er WG (2w,1m,0d,0n)
+   URL: https://www.wg-gesucht.de/wg-zimmer-in-Stuttgart-Bad-Cannstatt.12541821.html
+--------------------------------------------------------------------------------
+
+7. Gehobenes großes WG-Zimmer in moderner 3er-WG in Stuttgart, vollmöbliert + EBK + Strom + Internet
+   Stuttgart
+                            
+                            Bad Cannstatt
+   Miete: 800.0 € | Größe: 20.0 m²
+   Luftlinie: 10.96 km | Transit: 14.0 km (~21.5 min)
+   Verfügbar ab: 26.01.2026
+   WG-Größe: 3er WG (0w,1m,0d,0n)
+   URL: https://www.wg-gesucht.de/wg-zimmer-in-Stuttgart-Bad-Cannstatt.12546884.html
+--------------------------------------------------------------------------------
+
+8. 4-Zimmer WG mit Küche + Terrasse
+   Stuttgart
+                            
+                            Bad Cannstatt
+   Miete: 550.0 € | Größe: 18.0 m²
+   Luftlinie: 10.96 km | Transit: 14.0 km (~21.5 min)
+   Verfügbar ab: 01.03.2026
+   WG-Größe: 4er WG (0w,0m,0d,0n)
+   URL: https://www.wg-gesucht.de/wg-zimmer-in-Stuttgart-Bad-Cannstatt.12591452.html
+--------------------------------------------------------------------------------
+
+9. WG-Zimmer 13m2 | Ab 15.03. in Bad Cannstatt
+   Stuttgart
+                            
+                            Bad Cannstatt
+   Miete: 460.0 € | Größe: 13.0 m²
+   Luftlinie: 10.96 km | Transit: 14.0 km (~21.5 min)
+   Verfügbar ab: 10.02.2026
+   WG-Größe: 4er WG (1w,0m,0d,0n)
+   URL: https://www.wg-gesucht.de/wg-zimmer-in-Stuttgart-Bad-Cannstatt.12594874.html
+--------------------------------------------------------------------------------
+
+10. Helles Zimmer mit Blick ins Grüne
+   Stuttgart
+                            
+                            Bad Cannstatt
+   Miete: 450.0 € | Größe: 17.0 m²
+   Luftlinie: 10.96 km | Transit: 14.0 km (~21.5 min)
+   Verfügbar ab: 13.02.2026
+   WG-Größe: 3er WG (1w,1m,0d,0n)
+   URL: https://www.wg-gesucht.de/wg-zimmer-in-Stuttgart-Bad-Cannstatt.12620487.html
+--------------------------------------------------------------------------------
+
+11. Nettes WG-Zimmer in ruhiger Gegend
+   Stuttgart
+                            
+                            Bad Cannstatt
+   Miete: 512.0 € | Größe: 12.0 m²
+   Luftlinie: 10.96 km | Transit: 14.0 km (~21.5 min)
+   Verfügbar ab: 01.03.2026
+   WG-Größe: 3er WG (0w,1m,0d,0n)
+   URL: https://www.wg-gesucht.de/wg-zimmer-in-Stuttgart-Bad-Cannstatt.12625633.html
+--------------------------------------------------------------------------------
+
+12. WG Zimmer in Bad Cannstatt
+   Stuttgart
+                            
+                            Bad Cannstatt
+   Miete: 456.0 € | Größe: 11.0 m²
+   Luftlinie: 10.96 km | Transit: 14.0 km (~21.5 min)
+   Verfügbar ab: 31.01.2026
+   WG-Größe: 3er WG (0w,2m,0d,0n)
+   URL: https://www.wg-gesucht.de/wg-zimmer-in-Stuttgart-Bad-Cannstatt.12634621.html
+--------------------------------------------------------------------------------
+
+13. 1 Zimmer in 3er Frauen WG
+   Stuttgart
+                            
+                            Bad Cannstatt
+   Miete: 570.0 € | Größe: 15.0 m²
+   Luftlinie: 10.96 km | Transit: 14.0 km (~21.5 min)
+   Verfügbar ab: 07.02.2026
+   WG-Größe: 3er WG (2w,0m,0d,0n)
+   URL: https://www.wg-gesucht.de/wg-zimmer-in-Stuttgart-Bad-Cannstatt.12658264.html
+--------------------------------------------------------------------------------
+
+14. Erstbezug - helles WG Zimmer mit 17qm in 6er WG - frisch saniert
+   Stuttgart
+                            
+                            Bad Cannstatt
+   Miete: 680.0 € | Größe: 17.0 m²
+   Luftlinie: 10.96 km | Transit: 14.0 km (~21.5 min)
+   Verfügbar ab: 01.03.2026
+   WG-Größe: 6er WG (0w,0m,0d,0n)
+   URL: https://www.wg-gesucht.de/wg-zimmer-in-Stuttgart-Bad-Cannstatt.12681531.html
+--------------------------------------------------------------------------------
+
+15. Praktikantenhaus in Stuttgart
+   Stuttgart
+                            
+                            Bad Cannstatt
+   Miete: 520.0 € | Größe: 18.0 m²
+   Luftlinie: 10.96 km | Transit: 14.0 km (~21.5 min)
+   Verfügbar ab: 01.03.2026
+                    
+                                            - 31.08.2026
+   WG-Größe: 4er WG (2w,1m,0d,0n)
+   URL: https://www.wg-gesucht.de/wg-zimmer-in-Stuttgart-Bad-Cannstatt.12681580.html
+--------------------------------------------------------------------------------
+
+16. Erstbezug - helles WG Zimmer mit ca. 10 qm in 6er WG - frisch saniert
+   Stuttgart
+                            
+                            Bad Cannstatt
+   Miete: 420.0 € | Größe: 10.0 m²
+   Luftlinie: 10.96 km | Transit: 14.0 km (~21.5 min)
+   Verfügbar ab: 01.03.2026
+   WG-Größe: 6er WG (0w,0m,0d,0n)
+   URL: https://www.wg-gesucht.de/wg-zimmer-in-Stuttgart-Bad-Cannstatt.12681611.html
+--------------------------------------------------------------------------------
+
+17. Mitbewohner*in für 2er WG gesucht in Stuttgart Bad-Cannstatt - ab sofort
+   Stuttgart
+                            
+                            Bad Cannstatt
+   Miete: 600.0 € | Größe: 29.0 m²
+   Luftlinie: 10.96 km | Transit: 14.0 km (~21.5 min)
+   Verfügbar ab: 13.02.2026
+   WG-Größe: 2er WG (0w,1m,0d,0n)
+   URL: https://www.wg-gesucht.de/wg-zimmer-in-Stuttgart-Bad-Cannstatt.12681994.html
+--------------------------------------------------------------------------------
+
+18. nachmieter für WG zimmer gesucht
+   Stuttgart
+                            
+                            Bad Cannstatt
+   Miete: 625.0 € | Größe: 18.0 m²
+   Luftlinie: 10.96 km | Transit: 14.0 km (~21.5 min)
+   Verfügbar ab: 01.02.2026
+   WG-Größe: 3er WG (1w,1m,0d,0n)
+   URL: https://www.wg-gesucht.de/wg-zimmer-in-Stuttgart-Bad-Cannstatt.12686717.html
+--------------------------------------------------------------------------------
+
+19. sonniges WG-Zimmer zu vermieten - Februar bis Oktober
+   Stuttgart
+                            
+                            Bad Cannstatt
+   Miete: 495.0 € | Größe: 16.0 m²
+   Luftlinie: 10.96 km | Transit: 14.0 km (~21.5 min)
+   Verfügbar ab: 20.02.2026
+                    
+                                            - 01.10.2026
+   WG-Größe: 4er WG (0w,3m,0d,0n)
+   URL: https://www.wg-gesucht.de/wg-zimmer-in-Stuttgart-Bad-Cannstatt.12690328.html
+--------------------------------------------------------------------------------
+
+20. Süßes WG-Zimmer in Stuttgart
+   Stuttgart
+                            
+                            Bad Cannstatt
+   Miete: 465.0 € | Größe: 12.0 m²
+   Luftlinie: 10.96 km | Transit: 14.0 km (~21.5 min)
+   Verfügbar ab: 01.03.2026
+   WG-Größe: 4er WG (3w,0m,0d,0n)
+   URL: https://www.wg-gesucht.de/wg-zimmer-in-Stuttgart-Bad-Cannstatt.12762167.html
+--------------------------------------------------------------------------------
+

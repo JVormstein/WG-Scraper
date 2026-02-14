@@ -159,7 +159,10 @@ class WGScraper:
             _logger.warning(f"Fehler beim Parsen der Adresse '{address_text}': {e}")
             return None, None, None
     
-    def _parse_neighbors(self, neighbors_title: Optional[str]) -> Tuple[Optional[int], Optional[str]]:
+    def _parse_neighbors(
+        self,
+        neighbors_title: Optional[str]
+    ) -> Tuple[Optional[int], Optional[str], Optional[int], Optional[int], Optional[int], Optional[int]]:
         """
         Parst Mitbewohner-Info im Format: 'Xer WG (Yw,Ym,Yd,Yn)'
         
@@ -167,10 +170,10 @@ class WGScraper:
             neighbors_title: Title-Attribut mit Mitbewohner-Info
             
         Returns:
-            Tuple (wg_size, flatmate_details)
+            Tuple (wg_size, flatmate_details, female, male, diverse, rooms_free)
         """
         if not neighbors_title:
-            return None, None
+            return None, None, None, None, None, None
         
         try:
             # Extrahiere WG-Größe (z.B. "3er WG")
@@ -180,12 +183,43 @@ class WGScraper:
             # Flatmate-Details (in Klammern)
             flatmates = re.search(r'\(([^)]+)\)', neighbors_title)
             flatmate_details = flatmates.group(1) if flatmates else None
-            
-            return wg_size, flatmate_details
+
+            female = None
+            male = None
+            diverse = None
+            rooms_free = None
+
+            if flatmate_details:
+                for part in flatmate_details.split(','):
+                    part = part.strip().lower()
+                    count_match = re.search(r'(\d+)', part)
+                    count = int(count_match.group(1)) if count_match else None
+
+                    if 'frei' in part:
+                        if count is not None:
+                            rooms_free = count
+                        continue
+
+                    if count is None:
+                        continue
+
+                    if re.search(r'\d+\s*w\b', part):
+                        female = count
+                    elif re.search(r'\d+\s*m\b', part):
+                        male = count
+                    elif re.search(r'\d+\s*d\b', part):
+                        diverse = count
+
+            if rooms_free is None:
+                free_match = re.search(r'(\d+)\s*frei', neighbors_title.lower())
+                if free_match:
+                    rooms_free = int(free_match.group(1))
+
+            return wg_size, flatmate_details, female, male, diverse, rooms_free
             
         except Exception as e:
             _logger.warning(f"Fehler beim Parsen der Mitbewohner-Info '{neighbors_title}': {e}")
-            return None, None
+            return None, None, None, None, None, None
     
     def _parse_listing_preview(self, element) -> Optional[WGListing]:
         """
@@ -237,7 +271,9 @@ class WGScraper:
             # Mitbewohner (aus title-Attribut!)
             neighbors_elem = element.select_one(selectors['listing_neighbors'])
             neighbors_title = neighbors_elem.get('title') if neighbors_elem else None
-            wg_size, flatmate_details = self._parse_neighbors(neighbors_title)
+            wg_size, flatmate_details, female, male, diverse, rooms_free = self._parse_neighbors(
+                neighbors_title
+            )
             
             listing = WGListing(
                 listing_id=listing_id,
@@ -249,7 +285,11 @@ class WGScraper:
                 rent=rent,
                 available_from=available_from,
                 flatmates=wg_size,
-                flatmate_details=flatmate_details
+                flatmate_details=flatmate_details,
+                flatmates_female=female,
+                flatmates_male=male,
+                flatmates_diverse=diverse,
+                rooms_free=rooms_free
             )
             
             _logger.debug(f"Listing geparst: {listing}")

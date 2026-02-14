@@ -29,6 +29,10 @@ class WGListing:
         description: Beschreibungstext der Anzeige
         flatmates: Anzahl der Mitbewohner
         flatmate_details: Details zu Mitbewohnern (Alter, Geschlecht, etc.)
+        flatmates_female: Anzahl weiblicher Mitbewohner
+        flatmates_male: Anzahl maennlicher Mitbewohner
+        flatmates_diverse: Anzahl diverser Mitbewohner
+        rooms_free: Anzahl freier Zimmer
         features: Liste von Ausstattungsmerkmalen
         images: Liste von Bild-URLs
         contact_name: Name des Ansprechpartners
@@ -52,6 +56,10 @@ class WGListing:
     description: Optional[str] = None
     flatmates: Optional[int] = None
     flatmate_details: Optional[str] = None
+    flatmates_female: Optional[int] = None
+    flatmates_male: Optional[int] = None
+    flatmates_diverse: Optional[int] = None
+    rooms_free: Optional[int] = None
     features: List[str] = field(default_factory=list)
     images: List[str] = field(default_factory=list)
     contact_name: Optional[str] = None
@@ -79,6 +87,10 @@ class WGListing:
             'description': self.description,
             'flatmates': self.flatmates,
             'flatmate_details': self.flatmate_details,
+            'flatmates_female': self.flatmates_female,
+            'flatmates_male': self.flatmates_male,
+            'flatmates_diverse': self.flatmates_diverse,
+            'rooms_free': self.rooms_free,
             'features': ','.join(self.features) if self.features else None,
             'images': ','.join(self.images) if self.images else None,
             'contact_name': self.contact_name,
