@@ -8,11 +8,141 @@ import json
 import csv
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple, List
+from datetime import datetime, timedelta
+import hashlib
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
 import requests
 
 _logger = logging.getLogger(__name__)
+
+
+class RequestCache:
+    """
+    Einfacher Cache für HTTP-Requests, um redundante API-Calls zu vermeiden.
+    """
+    
+    def __init__(self, cache_dir: Optional[Path] = None, ttl_hours: int = 24):
+        """
+        Initialisiert den Cache.
+        
+        Args:
+            cache_dir: Verzeichnis für Cache-Dateien. Wenn None, wird ~/.wg_scraper_cache verwendet.
+            ttl_hours: Time-to-live für Cache-Einträge in Stunden (Standard: 24)
+        """
+        if cache_dir is None:
+            cache_dir = Path.home() / '.wg_scraper_cache'
+        
+        self.cache_dir = Path(cache_dir)
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.ttl = timedelta(hours=ttl_hours)
+        _logger.debug(f"RequestCache initialisiert in {self.cache_dir} mit TTL {ttl_hours}h")
+    
+    def _get_cache_key(self, url: str, params: Optional[Dict] = None) -> str:
+        """
+        Generiert einen Cache-Schlüssel aus URL und Parametern.
+        
+        Args:
+            url: Request-URL
+            params: Query-Parameter
+            
+        Returns:
+            Cache-Schlüssel (MD5-Hash)
+        """
+        cache_data = f"{url}|{json.dumps(params or {}, sort_keys=True)}"
+        return hashlib.md5(cache_data.encode()).hexdigest()
+    
+    def _get_cache_file(self, key: str) -> Path:
+        """Gibt den Cache-Dateipfad für einen Schlüssel zurück."""
+        return self.cache_dir / f"{key}.json"
+    
+    def get(self, url: str, params: Optional[Dict] = None) -> Optional[Dict]:
+        """
+        Holt einen gecachten Wert, wenn vorhanden und noch gültig.
+        
+        Args:
+            url: Request-URL
+            params: Query-Parameter
+            
+        Returns:
+            Gecachte Daten oder None
+        """
+        key = self._get_cache_key(url, params)
+        cache_file = self._get_cache_file(key)
+        
+        if not cache_file.exists():
+            return None
+        
+        try:
+            with open(cache_file, 'r') as f:
+                cache_data = json.load(f)
+            
+            # Prüfe TTL
+            cached_at = datetime.fromisoformat(cache_data['cached_at'])
+            if datetime.now() - cached_at > self.ttl:
+                _logger.debug(f"Cache abgelaufen: {key}")
+                cache_file.unlink()
+                return None
+            
+            _logger.debug(f"Cache Hit: {key}")
+            return cache_data['data']
+            
+        except Exception as e:
+            _logger.warning(f"Fehler beim Cache-Read: {e}")
+            return None
+    
+    def set(self, url: str, params: Optional[Dict], data: Dict) -> bool:
+        """
+        Speichert einen Wert im Cache.
+        
+        Args:
+            url: Request-URL
+            params: Query-Parameter
+            data: Zu cachende Daten
+            
+        Returns:
+            True bei Erfolg
+        """
+        key = self._get_cache_key(url, params)
+        cache_file = self._get_cache_file(key)
+        
+        try:
+            cache_data = {
+                'cached_at': datetime.now().isoformat(),
+                'url': url,
+                'params': params,
+                'data': data
+            }
+            
+            with open(cache_file, 'w') as f:
+                json.dump(cache_data, f)
+            
+            _logger.debug(f"Cache Set: {key}")
+            return True
+            
+        except Exception as e:
+            _logger.warning(f"Fehler beim Cache-Write: {e}")
+            return False
+    
+    def clear(self) -> bool:
+        """
+        Löscht alle Cache-Einträge.
+        
+        Returns:
+            True bei Erfolg
+        """
+        try:
+            for cache_file in self.cache_dir.glob('*.json'):
+                cache_file.unlink()
+            _logger.info("Cache geleert")
+            return True
+        except Exception as e:
+            _logger.warning(f"Fehler beim Cache-Löschen: {e}")
+            return False
+
+
+# Globale Cache-Instanz
+_request_cache = RequestCache()
 
 
 def parse_filters(filter_string: Optional[str]) -> Dict[str, Any]:
@@ -102,7 +232,7 @@ def calculate_route(
     mode: str = "driving"
 ) -> Optional[Dict[str, Any]]:
     """
-    Berechnet Route und Distanz.
+    Berechnet Route und Distanz mit Caching.
     
     Args:
         origin: Start-Koordinaten (lat, lon)
@@ -110,7 +240,13 @@ def calculate_route(
         mode: Verkehrsmittel ('driving', 'transit', 'walking', 'cycling')
         
     Returns:
-        Dictionary mit 'distance_km', 'duration_min', 'straight_line_km'
+        Dictionary mit:
+            - 'straight_line_km': Luftlinie (immer verfügbar)
+            - 'distance_km': Straßenentfernung (optional)
+            - 'duration_min': Fahrtdauer nach Verkehrsmittel (optional)
+            - 'transit_distance_km': Transit-Distanz (nur bei mode='transit')
+            - 'transit_duration_min': Transit-Dauer (nur bei mode='transit')
+            - 'is_transit_estimated': True wenn Transit-Zeit geschätzt wurde
     """
     try:
         # Luftlinie berechnen (immer verfügbar)
@@ -119,10 +255,17 @@ def calculate_route(
         result = {
             'straight_line_km': round(straight_line, 2),
             'distance_km': None,
-            'duration_min': None
+            'duration_min': None,
+            'transit_distance_km': None,
+            'transit_duration_min': None,
+            'is_transit_estimated': False
         }
         
-        # Versuche Routing über OSRM (kostenlos, keine API-Key nötig)
+        # Transit-Modus: Spezialbehandlung
+        if mode.lower() in ['transit', 'öpnv', 'public']:
+            return _calculate_transit_route(origin, destination, result)
+        
+        # Standard-Routing über OSRM (kostenlos, keine API-Key nötig)
         # Unterstützt: car, bike, foot
         osrm_mode = {
             'driving': 'car',
@@ -139,6 +282,13 @@ def calculate_route(
             'steps': 'false'
         }
         
+        # Prüfe Cache
+        cached_data = _request_cache.get(url, params)
+        if cached_data:
+            result['distance_km'] = cached_data.get('distance_km')
+            result['duration_min'] = cached_data.get('duration_min')
+            return result
+        
         response = requests.get(url, params=params, timeout=10)
         
         if response.status_code == 200:
@@ -147,6 +297,12 @@ def calculate_route(
                 route = data['routes'][0]
                 result['distance_km'] = round(route['distance'] / 1000, 2)
                 result['duration_min'] = round(route['duration'] / 60, 1)
+                
+                # Speichere im Cache
+                _request_cache.set(url, params, {
+                    'distance_km': result['distance_km'],
+                    'duration_min': result['duration_min']
+                })
         else:
             _logger.warning(f"OSRM Routing fehlgeschlagen: {response.status_code}")
         
@@ -157,8 +313,82 @@ def calculate_route(
         return {
             'straight_line_km': round(straight_line, 2) if 'straight_line' in locals() else None,
             'distance_km': None,
-            'duration_min': None
+            'duration_min': None,
+            'transit_distance_km': None,
+            'transit_duration_min': None,
+            'is_transit_estimated': False
         }
+
+
+def _calculate_transit_route(
+    origin: Tuple[float, float],
+    destination: Tuple[float, float],
+    result: Dict[str, Any]
+) -> Dict[str, Any]:
+    """
+    Berechnet Transit-Routen mit Fallback auf Schätzung.
+    Versucht zunächst, echte Fahrtdaten von der API zu holen.
+    Falls das fehlschlägt, wird eine Schätzung basierend auf Luftlinie verwendet.
+    
+    Args:
+        origin: Start-Koordinaten (lat, lon)
+        destination: Ziel-Koordinaten (lat, lon)
+        result: Basis-Result mit bereits berechneter Luftlinie
+        
+    Returns:
+        Result mit Transit-Daten (geholt oder geschätzt)
+    """
+    try:
+        # Versuche, echte Transit-Daten zu holen (z.B. von OSRM mit foot-Routing als Proxy)
+        # OSRM unterstützt kein echtes Transit-Routing, daher verwenden wir Schätzung
+        url = f"http://router.project-osrm.org/route/v1/foot/{origin[1]},{origin[0]};{destination[1]},{destination[0]}"
+        params = {'overview': 'false', 'steps': 'false'}
+        
+        # Prüfe Cache
+        cached_data = _request_cache.get(url, params)
+        if cached_data:
+            result['transit_distance_km'] = cached_data.get('transit_distance_km')
+            result['transit_duration_min'] = cached_data.get('transit_duration_min')
+            result['is_transit_estimated'] = cached_data.get('is_transit_estimated')
+            return result
+        
+        response = requests.get(url, params=params, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('code') == 'Ok' and data.get('routes'):
+                # Verwende Zu-Fuß-Route als ungefähre Basis für Transit
+                route = data['routes'][0]
+                # Transit ist typischerweise schneller als zu Fuß, aber mit Wartezeiten
+                # Schätzung: ~1.5x Zu-Fuß-Distanz, aber ~0.4x Zu-Fuß-Zeit (mit Wartezeiten)
+                result['transit_distance_km'] = round(route['distance'] / 1000 * 1.5, 2)
+                result['transit_duration_min'] = round(route['duration'] / 60 * 0.4, 1)
+                result['is_transit_estimated'] = True
+                
+                # Speichere im Cache
+                _request_cache.set(url, params, {
+                    'transit_distance_km': result['transit_distance_km'],
+                    'transit_duration_min': result['transit_duration_min'],
+                    'is_transit_estimated': True
+                })
+                
+                _logger.debug(f"Transit-Fahrtzeit geschätzt: {result['transit_duration_min']}min")
+                return result
+    except Exception as e:
+        _logger.debug(f"Transit-Routing fehlgeschlagen, verwende Fallback-Schätzung: {e}")
+    
+    # Fallback: Schätzung nur aus Luftlinie
+    # Durchschnittliche Busgeschwindigkeit: ~20 km/h (inklusive Wartezeiten, Haltestellen)
+    straight_line = result['straight_line_km']
+    if straight_line:
+        # Annahme: ÖPNV-Route ist 20% länger als Luftlinie
+        result['transit_distance_km'] = round(straight_line * 1.2, 2)
+        # Durchschnittliche ÖPNV-Geschwindigkeit: ~12 km/h (mit Wartezeiten)
+        result['transit_duration_min'] = round((straight_line * 1.2) / 12 * 60, 1)
+        result['is_transit_estimated'] = True
+        _logger.debug(f"Transit-Fahrtzeit aus Luftlinie geschätzt: {result['transit_duration_min']}min")
+    
+    return result
 
 
 def export_listings(
@@ -214,13 +444,22 @@ def _export_json(listings: List[Dict[str, Any]], path: Path, verbose: int) -> bo
 
 
 def _export_csv(listings: List[Dict[str, Any]], path: Path, verbose: int) -> bool:
-    """Exportiert als CSV."""
+    """Exportiert als CSV mit zusätzlichem Stadt-Feld."""
     try:
         if not listings:
             return False
 
         filtered = [_filter_listing_fields(listing, verbose) for listing in listings]
         fieldnames = _listing_field_order(verbose)
+        
+        # Füge Stadt-Feld nach 'city' ein (nur für CSV-Export sichtbar)
+        if 'city' in fieldnames:
+            city_index = fieldnames.index('city')
+            fieldnames.insert(city_index + 1, 'listing_city')
+        
+        # Extrahiere Stadt aus jedem Listing und füge es als 'listing_city' hinzu
+        for listing in filtered:
+            listing['listing_city'] = listing.get('city', '')  # Stadt seperiert für CSV
         
         with open(path, 'w', encoding='utf-8', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -398,10 +637,15 @@ def _export_routes_csv(
     mode: str,
     verbose: int,
 ) -> bool:
-    """Exportiert Routen als CSV."""
+    """Exportiert Routen als CSV mit zusätzlichem Stadt-Feld."""
     try:
         with open(path, 'w', encoding='utf-8', newline='') as f:
-            fieldnames = _route_field_order(verbose)
+            fieldnames = list(_route_field_order(verbose))
+            
+            # Füge Stadt-Feld nach 'city' ein (nur für CSV-Export sichtbar)
+            if 'city' in fieldnames:
+                city_index = fieldnames.index('city')
+                fieldnames.insert(city_index + 1, 'listing_city')
             
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
@@ -412,10 +656,17 @@ def _export_routes_csv(
                 
                 filtered = _filter_listing_fields(listing, verbose)
                 row = dict(filtered)
+                
+                # Füge Stadt-Feld seperat ein
+                row['listing_city'] = filtered.get('city', '')
+                
                 row.update({
                     'straight_line_km': route.get('straight_line_km', ''),
                     'distance_km': route.get('distance_km', ''),
-                    'duration_min': route.get('duration_min', '')
+                    'duration_min': route.get('duration_min', ''),
+                    'transit_distance_km': route.get('transit_distance_km', ''),
+                    'transit_duration_min': route.get('transit_duration_min', ''),
+                    'is_transit_estimated': route.get('is_transit_estimated', '')
                 })
                 
                 writer.writerow(row)
@@ -471,6 +722,15 @@ def _export_routes_txt(
                 if route['duration_min']:
                     f.write(f" (~{route['duration_min']} min)")
                 f.write("\n")
+                
+                # Zusätzliche Transit-Informationen wenn verfügbar
+                if route.get('transit_distance_km'):
+                    f.write(f"   Transit: {route['transit_distance_km']} km")
+                    if route['transit_duration_min']:
+                        f.write(f" (~{route['transit_duration_min']} min)")
+                    if route.get('is_transit_estimated'):
+                        f.write(" [geschätzt]")
+                    f.write("\n")
 
                 if verbose >= 1:
                     if listing.get('available_from'):
@@ -558,7 +818,15 @@ def _listing_field_order(verbose: int) -> List[str]:
 def _route_field_order(verbose: int) -> List[str]:
     """Definiert die Spaltenreihenfolge fuer Routen-CSV-Export."""
     fields = _listing_field_order(verbose)
-    fields.extend(['straight_line_km', 'distance_km', 'duration_min'])
+    # Getrennte Felder für Luftlinie, Standard-Routing und Transit
+    fields.extend([
+        'straight_line_km', 
+        'distance_km', 
+        'duration_min',
+        'transit_distance_km',
+        'transit_duration_min',
+        'is_transit_estimated'
+    ])
     return fields
 
 
