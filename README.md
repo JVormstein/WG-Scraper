@@ -191,11 +191,6 @@ black src/ tests/
 ## Lizenz
 
 MIT License - siehe [LICENSE.txt](LICENSE.txt)
-
-## Autor
-
-Jonas - jvormstein@outlook.de
-
 ## Beitragen
 
 Contributions sind willkommen! Bitte erstelle ein Issue oder Pull Request.

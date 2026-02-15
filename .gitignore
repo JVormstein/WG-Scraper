@@ -61,3 +61,4 @@ MANIFEST
 wg_data.db
 example_data.db
 .env
+AUTHORS.rst
