@@ -8,6 +8,7 @@ und zur Verwaltung der Datenbank.
 import logging
 import sys
 from pathlib import Path
+from time import sleep
 from typing import Any
 
 import click
@@ -433,11 +434,9 @@ def list(
                         continue
 
                     address = ", ".join(address_parts)
-
                     coords = geocode_address(address)
                     if not coords:
                         continue
-
                     route_info = calculate_route(coords, dest_coords, route_mode)
 
                     if route_info:

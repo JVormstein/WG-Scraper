@@ -6,11 +6,11 @@ import re
 import logging
 import json
 import csv
+import time
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple, List
 from datetime import datetime, timedelta
 import hashlib
-from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
 import requests
 
@@ -145,6 +145,208 @@ class RequestCache:
 _request_cache = RequestCache()
 
 
+class GeocoderRateLimiter:
+    """
+    Rate Limiter für den Nominatim Geocoding Service.
+    
+    Implementiert die Terms of Service von Nominatim:
+    - Mindestens 1 Sekunde Verzögerung zwischen Anfragen
+    - Caching um redundante Anfragen zu vermeiden
+    - Aussagekräftiger User-Agent
+    
+    Siehe: https://operations.osmfoundation.org/policies/nominatim/
+    """
+    
+    def __init__(self, min_delay_seconds: float = 1.0, cache_ttl_hours: int = 160008):
+        """
+        Initialisiert den Geocoder mit Rate Limiting.
+        
+        Args:
+            min_delay_seconds: Minimale Verzögerung zwischen Anfragen in Sekunden (Standard: 1.0)
+                               Nominatim verlangt mindestens 1 Sekunde zwischen Requests
+            cache_ttl_hours: Time-to-live für gecachte Adressen in Stunden (Standard: 168 = 1 Woche)
+        """
+        self.min_delay = min_delay_seconds
+        self.last_request_time = time.time() - self.min_delay  # Erlaubt sofortige erste Anfrage
+        
+        # Cache für Geocoding-Anfragen
+        self.cache_dir = Path.home() / '.wg_scraper_geocoding_cache'
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.cache_ttl = timedelta(hours=cache_ttl_hours)
+        
+        # User-Agent die die TOS erfüllt - muss echte Kontaktinfo enthalten
+        self.user_agent = "WG-Scraper/1.3 (+https://github.com/jj/wg-scraper)"
+        self.referer = "https://github.com/jj/wg-scraper"
+        
+        # Nominatim API Basis-URL
+        self.nominatim_url = "https://nominatim.openstreetmap.org/search"
+        
+        _logger.info(
+            f"GeocoderRateLimiter initialisiert mit "
+            f"{min_delay_seconds}s Verzögerung zwischen Anfragen (Nominatim TOS konform)"
+        )
+    
+    def _get_cache_path(self, address: str) -> Path:
+        """Gibt den Cache-Dateipfad für eine Adresse zurück."""
+        cache_key = hashlib.md5(address.lower().encode()).hexdigest()
+        return self.cache_dir / f"{cache_key}.json"
+    
+    def _get_from_cache(self, address: str) -> Optional[Tuple[float, float]]:
+        """
+        Versucht, Koordinaten aus dem Cache zu laden.
+        
+        Args:
+            address: Adresse zum Suchen
+            
+        Returns:
+            Tuple (latitude, longitude) oder None
+        """
+        cache_path = self._get_cache_path(address)
+        
+        if not cache_path.exists():
+            return None
+        
+        try:
+            with open(cache_path, 'r', encoding='utf-8') as f:
+                cache_data = json.load(f)
+            
+            # Prüfe TTL
+            cached_at = datetime.fromisoformat(cache_data['cached_at'])
+            if datetime.now() - cached_at > self.cache_ttl:
+                _logger.debug(f"Geocoding Cache abgelaufen: {address}")
+                cache_path.unlink()
+                return None
+            
+            coords = cache_data.get('coordinates')
+            if coords:
+                _logger.debug(f"Geocoding Cache Hit: {address} -> {coords}")
+                return tuple(coords)
+                
+        except Exception as e:
+            _logger.warning(f"Fehler beim Lesen des Geocoding Cache: {e}")
+        
+        return None
+    
+    def _save_to_cache(self, address: str, coords: Optional[Tuple[float, float]]) -> None:
+        """
+        Speichert Koordinaten im Cache.
+        
+        Args:
+            address: Adresse
+            coords: Tuple (latitude, longitude) oder None falls nicht gefunden
+        """
+        try:
+            cache_path = self._get_cache_path(address)
+            cache_data = {
+                'cached_at': datetime.now().isoformat(),
+                'address': address,
+                'coordinates': list(coords) if coords else None
+            }
+            
+            with open(cache_path, 'w', encoding='utf-8') as f:
+                json.dump(cache_data, f, ensure_ascii=False)
+                
+        except Exception as e:
+            _logger.warning(f"Fehler beim Speichern des Geocoding Cache: {e}")
+    
+    def _apply_rate_limit(self) -> None:
+        """Wendet das minimale Verzögerungsintervall zwischen Anfragen an."""
+        current_time = time.time()
+        time_since_last_request = current_time - self.last_request_time
+        
+        if time_since_last_request < self.min_delay:
+            sleep_time = self.min_delay - time_since_last_request
+            _logger.debug(f"Rate Limit: Warte {sleep_time:.2f}s (Nominatim TOS konform)")
+            print(f"Rate Limit: Warte {sleep_time:.2f}s (Nominatim TOS konform)")
+            time.sleep(sleep_time)
+        
+        self.last_request_time = time.time()
+    
+    def geocode(self, address: str) -> Optional[Tuple[float, float]]:
+        """
+        Geocodiert eine Adresse zu Koordinaten mit Rate Limiting und Caching.
+        
+        Args:
+            address: Adresse als String
+            
+        Returns:
+            Tuple (latitude, longitude) oder None wenn nicht gefunden
+        """
+        if not address:
+            return None
+        
+        # Normalisiere Adresse für konsistentes Caching
+        address_normalized = address.strip()
+        
+        # Versuche aus Cache zu laden
+        cached_coords = self._get_from_cache(address_normalized)
+        if cached_coords is not None:
+            return cached_coords
+        
+        try:
+            # Wende Rate Limit an (Nominatim TOS erforderlich!)
+            self._apply_rate_limit()
+            
+            _logger.debug(f"Geocodiere Adresse: {address_normalized}")
+            
+            # Direkte Nominatim API Anfrage mit allen erforderlichen Headers
+            params = {
+                'q': address_normalized,
+                'format': 'json',
+                'limit': 1,
+                'addressdetails': 0
+            }
+            
+            headers = {
+                'User-Agent': self.user_agent,
+                'Referer': self.referer,
+                'Accept': 'application/json',
+                'Accept-Language': 'de,en'
+            }
+            
+            response = requests.get(
+                self.nominatim_url,
+                params=params,
+                headers=headers,
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data and len(data) > 0:
+                    location = data[0]
+                    coords = (float(location['lat']), float(location['lon']))
+                    _logger.debug(f"Geocodierung erfolgreich: {address_normalized} -> {coords}")
+                    self._save_to_cache(address_normalized, coords)
+                    return coords
+                else:
+                    _logger.warning(f"Adresse nicht geocodiert: {address_normalized}")
+                    # Speichere auch "nicht gefunden" im Cache, um unnötige Anfragen zu sparen
+                    self._save_to_cache(address_normalized, None)
+                    return None
+            else:
+                _logger.error(f"Nominatim API Fehler {response.status_code}: {response.text}")
+                return None
+                
+        except Exception as e:
+            _logger.error(f"Fehler beim Geocoding von '{address_normalized}': {e}")
+            return None
+    
+    def clear_cache(self) -> None:
+        """Löscht den kompletten Geocoding-Cache."""
+        try:
+            for cache_file in self.cache_dir.glob('*.json'):
+                cache_file.unlink()
+            _logger.info("Geocoding-Cache geleert")
+        except Exception as e:
+            _logger.warning(f"Fehler beim Löschen des Geocoding-Cache: {e}")
+
+
+# Globale GeocoderRateLimiter-Instanz
+_geocoder = GeocoderRateLimiter()
+
+
+
 def parse_filters(filter_string: Optional[str]) -> Dict[str, Any]:
     """
     Parst Filter-String in Dictionary.
@@ -203,27 +405,67 @@ def parse_filters(filter_string: Optional[str]) -> Dict[str, Any]:
 
 def geocode_address(address: str) -> Optional[Tuple[float, float]]:
     """
-    Konvertiert Adresse in Koordinaten.
+    Konvertiert Adresse in Koordinaten mit Rate Limiting und Caching (Nominatim TOS konform).
+    
+    Diese Funktion nutzt einen globalen GeocoderRateLimiter, der:
+    - Automatisch alle Anfragen cached (~/.wg_scraper_geocoding_cache)
+    - Rate Limiting (mindestens 1 Sekunde zwischen API-Requests) anwendet
+    - Nominatim (OpenStreetMap) mit aussagekräftigem User-Agent nutzt
+    
+    Caching-Verhalten:
+    - Cache TTL: 7 Tage
+    - Auch negative Ergebnisse (nicht gefunden) werden gecacht
+    - Bei Cache Hit: Sofortige Rückgabe ohne API-Request
+    - Bei Cache Miss: API-Request mit Rate Limiting + Speicherung im Cache
     
     Args:
         address: Adresse als String
         
     Returns:
-        Tuple (latitude, longitude) oder None
+        Tuple (latitude, longitude) oder None bei Fehler/nicht gefunden
     """
-    try:
-        geolocator = Nominatim(user_agent="wg-scraper")
-        location = geolocator.geocode(address, timeout=10)
-        
-        if location:
-            return (location.latitude, location.longitude)
-        
-        _logger.warning(f"Adresse nicht gefunden: {address}")
-        return None
-        
-    except Exception as e:
-        _logger.error(f"Fehler beim Geocoding: {e}")
-        return None
+    return _geocoder.geocode(address)
+
+
+def clear_geocoding_cache() -> None:
+    """
+    Löscht den kompletten Geocoding-Cache.
+    
+    Nützlich wenn:
+    - Der Cache zu groß wird
+    - Aktuelle/frische Daten benötigt werden
+    - Nach Änderungen der Adressdatenbank
+    """
+    _geocoder.clear_cache()
+
+
+def get_geocoding_cache_stats() -> Dict[str, Any]:
+    """
+    Gibt Statistiken über den Geocoding-Cache zurück.
+    
+    Returns:
+        Dictionary mit Cache-Statistiken:
+        - cache_dir: Pfad zum Cache-Verzeichnis
+        - cached_entries: Anzahl gecachter Einträge
+        - cache_size_mb: Größe des Cache in MB
+    """
+    cache_dir = _geocoder.cache_dir
+    
+    if not cache_dir.exists():
+        return {
+            'cache_dir': str(cache_dir),
+            'cached_entries': 0,
+            'cache_size_mb': 0.0
+        }
+    
+    cache_files = list(cache_dir.glob('*.json'))
+    total_size = sum(f.stat().st_size for f in cache_files)
+    
+    return {
+        'cache_dir': str(cache_dir),
+        'cached_entries': len(cache_files),
+        'cache_size_mb': round(total_size / (1024 * 1024), 2)
+    }
 
 
 def calculate_route(
@@ -289,7 +531,10 @@ def calculate_route(
             result['duration_min'] = cached_data.get('duration_min')
             return result
         
-        response = requests.get(url, params=params, timeout=10)
+        _geocoder._apply_rate_limit()  # Rate Limiting auch für OSRM-Requests anwenden
+
+        headers = {'User-Agent': _geocoder.user_agent}
+        response = requests.get(url, params=params, headers=headers, timeout=10)
         
         if response.status_code == 200:
             data = response.json()
@@ -352,7 +597,10 @@ def _calculate_transit_route(
             result['is_transit_estimated'] = cached_data.get('is_transit_estimated')
             return result
         
-        response = requests.get(url, params=params, timeout=10)
+        _geocoder._apply_rate_limit()  # Rate Limiting auch für Transit-Proxy-Requests anwenden
+
+        headers = {'User-Agent': _geocoder.user_agent}
+        response = requests.get(url, params=params, headers=headers, timeout=10)
         
         if response.status_code == 200:
             data = response.json()

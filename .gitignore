@@ -62,3 +62,6 @@ wg_data.db
 example_data.db
 .env
 AUTHORS.rst
+results.txt
+results.csv
+wg_data.db
